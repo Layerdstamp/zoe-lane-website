@@ -319,7 +319,7 @@
     </div>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
   <script>
   (function(){
   'use strict';
@@ -350,12 +350,6 @@
     {s:'../assets/images/art/fidget-ring.jpeg',      t:'Fidget Ring',         y:'2024'},
     {s:'../assets/images/art/fashion-standards-1.jpeg',t:'Fashion Standards', y:'2024'}
   ];
-
-  /* ── MOBILE / LOW-POWER DETECTION ── */
-  var isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
-                 (window.matchMedia && matchMedia('(pointer:coarse)').matches && matchMedia('(hover:none)').matches);
-  var dpr = isMobile ? 1 : Math.min(devicePixelRatio, 2);
-  if(isMobile) PC = Math.min(PC, 12000);
 
   /* ═══════════════════════════════════════════════
      STATE
@@ -411,7 +405,8 @@
      ═══════════════════════════════════════════════ */
   var gR = new THREE.WebGLRenderer({canvas:$gc, antialias:false, alpha:false});
   gR.setSize(innerWidth, innerHeight);
-  gR.setPixelRatio(dpr);
+  gR.setPixelRatio(Math.min(devicePixelRatio, 2));
+  $gc.addEventListener('webglcontextlost', function(e){ e.preventDefault(); });
 
   var gScene = new THREE.Scene();
   var gCam = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 2000);
@@ -460,7 +455,7 @@
       '  vColor = color;',
       '  vec4 mv = modelViewMatrix * vec4(position, 1.0);',
       '  float streak = 1.0 + uSpeed * 3.0;',
-      '  gl_PointSize = max(size * streak * (200.0 / max(-mv.z, 1.0)), 0.5);',
+      '  gl_PointSize = clamp(size * streak * (200.0 / max(-mv.z, 1.0)), 0.5, 128.0);',
       '  gl_Position = projectionMatrix * mv;',
       '}'
     ].join('\n'),
@@ -492,15 +487,13 @@
   var rend = null;
   function initGalleryRenderer(){
     if(rend) return;
-    rend = new THREE.WebGLRenderer({canvas:$gal, antialias:!isMobile});
+    rend = new THREE.WebGLRenderer({canvas:$gal, antialias:true});
     rend.setSize(innerWidth, innerHeight);
-    rend.setPixelRatio(dpr);
-    if(!isMobile){
-      rend.shadowMap.enabled = true;
-      rend.shadowMap.type = THREE.PCFSoftShadowMap;
-    }
+    rend.setPixelRatio(Math.min(devicePixelRatio, 2));
+    rend.shadowMap.enabled = true;
+    rend.shadowMap.type = THREE.PCFSoftShadowMap;
+    $gal.addEventListener('webglcontextlost', function(e){ e.preventDefault(); });
   }
-  if(!isMobile) initGalleryRenderer();
 
   var scene = new THREE.Scene();
   scene.background = new THREE.Color(0x1a1a1a);
@@ -541,11 +534,9 @@
   var dirLight = new THREE.DirectionalLight(0xffffff, 0.45);
   dirLight.position.set(0, HH - 0.2, 0);
   dirLight.target.position.set(0, 0, -10);
-  if(!isMobile){
-    dirLight.castShadow = true;
-    dirLight.shadow.mapSize.width = 1024;
-    dirLight.shadow.mapSize.height = 1024;
-  }
+  dirLight.castShadow = true;
+  dirLight.shadow.mapSize.width = 1024;
+  dirLight.shadow.mapSize.height = 1024;
   scene.add(dirLight);
   scene.add(dirLight.target);
 
@@ -555,18 +546,13 @@
   camZMax = -(hallLen - 6);
 
   // Floor — glossy reflective white epoxy
-  var cubeRT, cubeCam;
-  if(!isMobile){
-    cubeRT = new THREE.WebGLCubeRenderTarget(256, {format:THREE.RGBFormat, generateMipmaps:true, minFilter:THREE.LinearMipmapLinearFilter});
-    cubeCam = new THREE.CubeCamera(0.1, 50, cubeRT);
-    cubeCam.position.set(0, 0.05, -hallLen/4);
-    scene.add(cubeCam);
-  }
+  var cubeRT = new THREE.WebGLCubeRenderTarget(256, {generateMipmaps:true, minFilter:THREE.LinearMipmapLinearFilter});
+  var cubeCam = new THREE.CubeCamera(0.1, 50, cubeRT);
+  cubeCam.position.set(0, 0.05, -hallLen/4);
+  scene.add(cubeCam);
 
   var floorG = new THREE.PlaneGeometry(HW, hallLen);
-  var floorM = isMobile
-    ? new THREE.MeshStandardMaterial({color:0x0a0a0a, roughness:0.15, metalness:0.3})
-    : new THREE.MeshStandardMaterial({color:0x0a0a0a, roughness:0.08, metalness:0.4, envMap:cubeRT.texture, envMapIntensity:0.8});
+  var floorM = new THREE.MeshStandardMaterial({color:0x0a0a0a, roughness:0.08, metalness:0.4, envMap:cubeRT.texture, envMapIntensity:0.8});
   var floor = new THREE.Mesh(floorG, floorM);
   var floorNeedsEnv = true;
   floor.rotation.x = -Math.PI/2;
@@ -606,8 +592,8 @@
   var hexBezelM = new THREE.MeshStandardMaterial({color:0x2a2a2a, roughness:0.4, metalness:0.6});
   var hexGlowM = new THREE.MeshStandardMaterial({color:0xffffff, emissive:0xffffff, emissiveIntensity:0.5, roughness:1});
 
-  var hexSpacingX = hexR * (isMobile ? 3.5 : 1.82);
-  var hexSpacingZ = hexR * (isMobile ? 4.0 : 2.1);
+  var hexSpacingX = hexR * 1.82;
+  var hexSpacingZ = hexR * 2.1;
   var hexCols = Math.floor(HW / hexSpacingX) - 1;
   var hexRows = Math.floor(hallLen / hexSpacingZ);
   var hexStartX = -(hexCols - 1) * hexSpacingX / 2;
@@ -632,7 +618,7 @@
   }
 
   // Point lights every few hexagons for even illumination
-  for(var li = 0; li < hallLen; li += (isMobile ? 8 : 3)){
+  for(var li = 0; li < hallLen; li += 3){
     var cLight = new THREE.PointLight(0xffffff, 0.18, 9, 2);
     cLight.position.set(0, HH - 0.3, 2 - li);
     scene.add(cLight);
@@ -747,14 +733,12 @@
     scene.add(sp.target);
 
     // Ceiling-mounted spotlight shining straight down onto artwork
-    if(!isMobile){
-      var ceilSp = new THREE.SpotLight(0xffeedd, 0.7, 14, Math.PI/6, 0.6, 1);
-      var cSpX = side==='left' ? xP + 1.2 : xP - 1.2;
-      ceilSp.position.set(cSpX, HH - 0.05, zP);
-      ceilSp.target.position.set(xP, FY, zP);
-      scene.add(ceilSp);
-      scene.add(ceilSp.target);
-    }
+    var ceilSp = new THREE.SpotLight(0xffeedd, 0.7, 14, Math.PI/6, 0.6, 1);
+    var cSpX = side==='left' ? xP + 1.2 : xP - 1.2;
+    ceilSp.position.set(cSpX, HH - 0.05, zP);
+    ceilSp.target.position.set(xP, FY, zP);
+    scene.add(ceilSp);
+    scene.add(ceilSp.target);
   }
 
   // Point light that follows camera
@@ -899,17 +883,13 @@
      INTRO → GALLERY TRANSITION
      ═══════════════════════════════════════════════ */
   function startGallery(){
-    // On mobile, free the galaxy WebGL context before creating gallery renderer
-    if(isMobile){
-      gGeo.dispose(); gMat.dispose(); gR.dispose();
-      $gc.style.display='none';
-      $intro.style.display='none';
-    }
+    // Free galaxy GPU context before creating gallery renderer
+    gGeo.dispose(); gMat.dispose(); gR.dispose();
     initGalleryRenderer();
 
     phase='gallery';
     // If called from skip button, fade intro out first
-    if(!introEnding && !isMobile){
+    if(!introEnding){
       $gc.style.transition='opacity 1.2s';
       $gc.style.opacity='0';
       $intro.style.transition='opacity 1.2s';
@@ -922,6 +902,8 @@
     $gal.style.transition='opacity 1.5s';
 
     setTimeout(function(){
+      $gc.style.display='none';
+      $intro.style.display='none';
       $gal.style.opacity='1';
       $char.style.display='block';
       $char.classList.add('dropping');
@@ -936,15 +918,6 @@
         idleHintShown = true;
       }, 650);
     }, 600);
-
-    if(!isMobile){
-      setTimeout(function(){
-        $gc.style.display='none';
-        $intro.style.display='none';
-        // Clean up intro resources
-        gGeo.dispose(); gMat.dispose(); gR.dispose();
-      }, 2000);
-    }
   }
 
   $skip.addEventListener('click', startGallery);
@@ -1029,7 +1002,7 @@
 
     if(phase==='gallery'){
       // Capture floor reflections once
-      if(floorNeedsEnv && cubeCam && rend){
+      if(floorNeedsEnv && rend){
         floor.visible = false;
         cubeCam.position.set(0, 0.05, camZ - 5);
         cubeCam.update(rend, scene);
@@ -1197,7 +1170,7 @@
       }
       camLight.position.set(0, 3, camZ);
 
-      rend.render(scene, cam);
+      if(rend) rend.render(scene, cam);
     }
   }
 
