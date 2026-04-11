@@ -406,7 +406,6 @@
   var gR = new THREE.WebGLRenderer({canvas:$gc, antialias:false, alpha:false});
   gR.setSize(innerWidth, innerHeight);
   gR.setPixelRatio(Math.min(devicePixelRatio, 2));
-  $gc.addEventListener('webglcontextlost', function(e){ e.preventDefault(); });
 
   var gScene = new THREE.Scene();
   var gCam = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 2000);
@@ -455,7 +454,7 @@
       '  vColor = color;',
       '  vec4 mv = modelViewMatrix * vec4(position, 1.0);',
       '  float streak = 1.0 + uSpeed * 3.0;',
-      '  gl_PointSize = clamp(size * streak * (200.0 / max(-mv.z, 1.0)), 0.5, 128.0);',
+      '  gl_PointSize = max(size * streak * (200.0 / max(-mv.z, 1.0)), 0.5);',
       '  gl_Position = projectionMatrix * mv;',
       '}'
     ].join('\n'),
@@ -492,7 +491,6 @@
     rend.setPixelRatio(Math.min(devicePixelRatio, 2));
     rend.shadowMap.enabled = true;
     rend.shadowMap.type = THREE.PCFSoftShadowMap;
-    $gal.addEventListener('webglcontextlost', function(e){ e.preventDefault(); });
   }
 
   var scene = new THREE.Scene();
@@ -546,7 +544,7 @@
   camZMax = -(hallLen - 6);
 
   // Floor — glossy reflective white epoxy
-  var cubeRT = new THREE.WebGLCubeRenderTarget(256, {generateMipmaps:true, minFilter:THREE.LinearMipmapLinearFilter});
+  var cubeRT = new THREE.WebGLCubeRenderTarget(256, {format:THREE.RGBFormat, generateMipmaps:true, minFilter:THREE.LinearMipmapLinearFilter});
   var cubeCam = new THREE.CubeCamera(0.1, 50, cubeRT);
   cubeCam.position.set(0, 0.05, -hallLen/4);
   scene.add(cubeCam);
@@ -883,7 +881,6 @@
      INTRO → GALLERY TRANSITION
      ═══════════════════════════════════════════════ */
   function startGallery(){
-    // Free galaxy GPU context before creating gallery renderer
     gGeo.dispose(); gMat.dispose(); gR.dispose();
     initGalleryRenderer();
 
@@ -902,8 +899,6 @@
     $gal.style.transition='opacity 1.5s';
 
     setTimeout(function(){
-      $gc.style.display='none';
-      $intro.style.display='none';
       $gal.style.opacity='1';
       $char.style.display='block';
       $char.classList.add('dropping');
@@ -918,6 +913,11 @@
         idleHintShown = true;
       }, 650);
     }, 600);
+
+    setTimeout(function(){
+      $gc.style.display='none';
+      $intro.style.display='none';
+    }, 2000);
   }
 
   $skip.addEventListener('click', startGallery);
