@@ -703,6 +703,8 @@
 
     // Artwork
     var tex=tl.load(aw.s);
+    tex.minFilter=THREE.LinearFilter;
+    tex.generateMipmaps=false;
     var artG=new THREE.PlaneGeometry(aW-0.2, aH-0.2);
     var artM=new THREE.MeshBasicMaterial({map:tex});
     var artMesh=new THREE.Mesh(artG, artM);
