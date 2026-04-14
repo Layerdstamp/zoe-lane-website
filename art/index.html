@@ -675,16 +675,14 @@
     var img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = function() {
-      // Resize to power-of-two canvas so Three.js r128 won't downscale
-      var sz = 2048;
+      // Round each dimension up to next power of two
+      function pot(v) { var p = 1; while (p < v) p *= 2; return p; }
+      var w = pot(img.width), h = pot(img.height);
       var cvs = document.createElement('canvas');
-      cvs.width = sz; cvs.height = sz;
+      cvs.width = w; cvs.height = h;
       var ctx = cvs.getContext('2d');
-      // Cover-fit: fill canvas while preserving aspect ratio
-      var iw = img.width, ih = img.height;
-      var scale = Math.max(sz / iw, sz / ih);
-      var sw = iw * scale, sh = ih * scale;
-      ctx.drawImage(img, (sz - sw) / 2, (sz - sh) / 2, sw, sh);
+      // Draw full image stretched to fill — no cropping
+      ctx.drawImage(img, 0, 0, w, h);
       var tex = new THREE.CanvasTexture(cvs);
       tex.minFilter = THREE.LinearMipmapLinearFilter;
       tex.magFilter = THREE.LinearFilter;
