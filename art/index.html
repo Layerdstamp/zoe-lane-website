@@ -342,8 +342,8 @@
   var isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || (window.innerWidth <= 768);
 
   var artworks = [
-    {s:'../assets/images/art/let-them-eat-cake-1.jpg', t:'Let Them Eat C.',    y:'2024', ar:1200/1960},
-    {s:'../assets/images/art/fashion-standards-1.jpeg',t:'Fashion Standards',  y:'2024', ar:859/1144},
+    {s:'../assets/images/art/let-them-eat-cake-1.jpg', t:'Let Them Eat C.',    y:'2024', ar:1200/1960, sz:1.5},
+    {s:'../assets/images/art/fashion-standards-1.jpeg',t:'Fashion Standards',  y:'2024', ar:859/1144, sz:1.5},
     {s:'../assets/images/art/dead-mother.jpg',       t:'Dead Mother',         y:'2021', ar:1525/1016},
     {s:'../assets/images/art/femme-fatale-skirt.jpeg',t:'Femme Fatale Skirt', y:'2022', ar:859/1236},
     {s:'../assets/images/art/teapot-set.jpeg',       t:'Teapot Set',          y:'2023', ar:859/514},
@@ -696,7 +696,8 @@
   function makeFrame(aw, x, y, z, rotY) {
     var grp = new THREE.Group();
     // Compute frame size from image aspect ratio — fit within max 1.8 wide × 1.4 tall
-    var maxW=1.8, maxH=1.4;
+    var sc = aw.sz || 1;
+    var maxW=1.8*sc, maxH=1.4*sc;
     var ar = aw.ar || (maxW/maxH); // width/height ratio
     var aW, aH;
     if (ar >= maxW/maxH) {
